@@ -1,0 +1,6 @@
+#!/bin/sh
+NAME="ETHERPAD"
+COMMAND="su - etherpad -s /bin/ash -c 'NODE_ENV=production /var/www/etherpad/bin/run.sh'"
+WAIT="/tmp/etherpad_configured"
+
+exec service-handler "$NAME" "$COMMAND" "$WAIT"

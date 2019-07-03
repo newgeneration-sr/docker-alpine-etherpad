@@ -1,0 +1,178 @@
+#!/usr/bin/with-contenv sh
+
+run(){
+  eval "su - etherpad -s /bin/ash -c 'cd /var/www/etherpad/ && "$@"'" 
+  return $? 
+}
+
+wait_db(){
+    echo ">>> Waiting for database to be ready"
+    while ! $(nc -vz ${DATABASE_HOST} ${DATABASE_PORT})
+    do
+        sleep 1
+    done
+    echo ">>> Database ready"
+}
+
+do_query(){
+    echo $1 > /tmp/cmd
+    /usr/bin/mysql -h ${DATABASE_HOST} -P ${DATABASE_PORT} -u ${DATABASE_USERNAME} ${DATABASE_NAME} --password=${DATABASE_PASSWORD} </tmp/cmd 
+    RET=$?
+    rm /tmp/cmd
+    return $RET
+}
+
+check_configured(){
+    OUT=$(do_query "SELECT 1 FROM __configured;" 2>&1)
+    RET=$?
+
+    [ $RET -eq 1 ] && echo "$OUT" | grep 1146 >/dev/null
+    [ $? -eq 1 ]
+    CONFIGURED=$?
+
+    [ $RET -eq 1 -a $CONFIGURED -eq 0 ]
+    DB_PROBLEM=$?
+}
+
+add_configured(){
+    do_query "CREATE TABLE __configured(a INT NOT NULL AUTO_INCREMENT PRIMARY KEY);"
+}
+
+install(){
+    echo "> Install"
+    if [ ! -d /var/www/etherpad ] 
+    then
+        echo ">>> No volume mounted"
+        echo ">>>>> Creating working dir"
+        mkdir -p /var/www/etherpad
+    fi
+
+    ls /var/www/etherpad/settings.json >/dev/null 2>&1
+    INSTALLED=$?
+
+    wait_db
+    check_configured
+
+    echo "INSTALLED = $INSTALLED and CONFIGURED = $CONFIGURED"
+
+    if [ $DB_PROBLEM -eq 0 ]
+    then
+        echo ">>> Problem detected, can't connect to database"
+        echo "Query answer: $OUT"
+        success
+    fi
+
+    if [ ! $INSTALLED -eq 0 ]
+    then
+        if [ ! $CONFIGURED -eq 0 ]
+        then
+            echo ">>> Downloading etherpad"
+            wget -q https://github.com/ether/etherpad-lite/archive/master.tar.gz \
+            -O /tmp/etherpad.tgz || return 1
+
+            echo ">>> Extracting "
+            tar -xzf /tmp/etherpad.tgz -C /var/www/etherpad --strip-components=1
+            mv /opt/ressources/settings.json.template /var/www/etherpad/settings.json.template
+
+            rm /tmp/etherpad.tgz
+
+            echo ">>> Fixing permissions"
+            chown etherpad:etherpad /var/www/etherpad -R
+        else
+            echo ">>> Problem detected, hanging database with no installation"
+            success
+        fi
+    else
+        if [ ! $CONFIGURED -eq 0 ]
+        then
+            echo ">>> Problem detected, already installed but the database was dropped"
+            success
+        else
+            echo ">>> Already installed"
+        fi
+    fi
+
+    return 0
+}
+
+config(){
+    echo "> Config"
+
+    if [ ! $CONFIGURED -eq 0 ]
+    then 
+        echo ">>> Configuring"
+        echo ">>>>> Importing settings"
+
+        cd /var/www/etherpad
+
+        USERS_SETTINGS=""
+        if [ $USE_ADMIN = "TRUE" ]
+        then
+            ADMIN_SETTINGS='    "'${ADMIN_USERNAME}'": {
+      "password": "'${ADMIN_PASSWORD}'",
+      "is_admin": true
+        }'
+            [ -n "$USERS_SETTINGS" ] && USERS_SETTINGS=$USERS_SETTINGS",
+"
+            USERS_SETTINGS=$USERS_SETTINGS$ADMIN_SETTINGS
+        fi
+
+        if [ $USE_LDAP = "TRUE" ]
+        then
+            LDAP_SETTINGS='    "ldapauth": {
+      "url": "ldap://'${LDAP_HOST}'",
+      "accountBase": "'${LDAP_BASE_DN}'",
+      "accountPattern": "(&(objectClass=*)(uid={{username}}))",
+      "displayNameAttribute": "cn",
+      "searchDN": "cn=admin,'${LDAP_BASE_DN}'",
+      "searchPWD": "'${LDAP_ADMIN_PASS}'",
+      "groupSearchBase": "'${LDAP_BASE_DN}'",
+      "groupAttribute": "member",
+      "groupAttributeIsDN": true,
+      "searchScope": "sub",
+      "groupSearch": "(&(cn='${LDAP_ADMIN_GROUP}')(objectClass=groupOfNames))",
+      "anonymousReadonly": false
+        }'
+            [ -n "$USERS_SETTINGS" ] && USERS_SETTINGS=$USERS_SETTINGS",
+"
+            USERS_SETTINGS=$USERS_SETTINGS$LDAP_SETTINGS
+            PLUGINS=$PLUGINS" ep_ldapauth"
+        fi
+
+        sed -i settings.json.template -e "s/{{TITLE}}/${TITLE}/" -e "s/{{DATABASE_HOST}}/${DATABASE_HOST}/" \
+        -e "s/{{DATABASE_PORT}}/${DATABASE_PORT}/" -e "s/{{DATABASE_NAME}}/${DATABASE_NAME}/" \
+        -e "s/{{DATABASE_USERNAME}}/${DATABASE_USERNAME}/" -e "s/{{DATABASE_PASSWORD}}/${DATABASE_PASSWORD}/" \
+
+        sed -n '1,/{{USERS_SETTINGS}}/ p' settings.json.template >settings.json
+        echo "$USERS_SETTINGS" >>settings.json
+        sed -n '/{{USERS_SETTINGS}}/,$ p' settings.json.template >>settings.json
+        sed -i '/{{USERS_SETTINGS}}/d' settings.json
+
+        echo ">>>>> Installing dependencies"
+        run bin/installDeps.sh
+
+        [ -n "$PLUGINS" ] && echo ">>>>> Installing plugins : $PLUGINS" && run "npm install $PLUGINS"
+
+        add_configured
+    else
+        echo ">>> Already Configured"
+    fi
+
+    echo 0 > /tmp/etherpad_configured
+
+    return 0
+}
+
+fail(){
+    echo "[ Failed ]"
+    echo "1" > /tmp/etherpad
+    exit 1
+}
+
+success(){
+    echo "[ Success ]"
+    echo "0" > /tmp/etherpad
+    exit 0
+}
+
+install && config && success || fail

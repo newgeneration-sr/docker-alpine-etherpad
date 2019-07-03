@@ -1,0 +1,75 @@
+version: '3.1'
+
+services:
+
+  etherpad:
+    image: dotriver/etherpad
+    environment:
+        - TITLE=Welcome to Etherpad
+        - DATABASE_HOST=mariadb
+        - DATABASE_PORT=3306
+        - DATABASE_NAME=etherpad
+        - DATABASE_USERNAME=etherpad
+        - DATABASE_PASSWORD=password
+        - USE_ADMIN=TRUE
+        - ADMIN_USERNAME=admin
+        - ADMIN_PASSWORD=password
+        - USE_LDAP=TRUE
+        - LDAP_BASE_DN=dc=example,dc=com
+        - LDAP_HOST=fd
+        - LDAP_ADMIN_PASS=password
+        - LDAP_ADMIN_GROUP=admin
+        - PLUGINS=ep_adminpads ep_pad_tracker
+    ports:
+      - 9001:9001
+    volumes:
+      - /tmp/etherpad:/var/www/etherpad/
+    networks:
+      default:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+      mode: global
+
+  mariadb:
+    image: dotriver/mariadb
+    environment:
+      - ROOT_PASSWORD=password
+      - DB_0_NAME=etherpad
+      - DB_0_PASS=password
+    ports:
+      - 3306:3306
+      - 8081:8081
+    volumes:
+      - mariadb-data:/var/lib/mysql/
+      - mariadb-config:/etc/mysql/
+    networks:
+      default:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+      mode: global
+
+  fd:
+    image: dotriver/fusiondirectory
+    ports:
+      - "8080:80"
+    environment:
+      DOMAIN: example.com
+      ADMIN_PASS: password
+      CONFIG_PASS: password
+    volumes:
+      - openldap-data:/var/lib/openldap/
+      - openldap-config:/etc/openldap/
+
+volumes:
+    mariadb-data:
+    mariadb-config:
+    openldap-data:
+    openldap-config:
