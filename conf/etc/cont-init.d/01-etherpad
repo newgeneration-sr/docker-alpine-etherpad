@@ -16,7 +16,7 @@ wait_db(){
 
 do_query(){
     echo $1 > /tmp/cmd
-    /usr/bin/mysql -h ${DATABASE_HOST} -P ${DATABASE_PORT} -u ${DATABASE_USERNAME} ${DATABASE_NAME} --password=${DATABASE_PASSWORD} </tmp/cmd 
+    /usr/bin/mysql -h ${DATABASE_HOST} -P ${DATABASE_PORT} -u ${DATABASE_NAME} ${DATABASE_NAME} --password=${DATABASE_PASSWORD} </tmp/cmd 
     RET=$?
     rm /tmp/cmd
     return $RET
@@ -72,7 +72,7 @@ install(){
 
             echo ">>> Extracting "
             tar -xzf /tmp/etherpad.tgz -C /var/www/etherpad --strip-components=1
-            mv /opt/ressources/settings.json.template /var/www/etherpad/settings.json.template
+            #mv /opt/ressources/settings.json.template /var/www/etherpad/settings.json.template
 
             rm /tmp/etherpad.tgz
 
