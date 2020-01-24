@@ -71,7 +71,7 @@ install(){
             VERSION=$(curl -s -L https://api.github.com/repos/ether/etherpad-lite/tags \
             | grep "name" | cut -d '"' -f4 | egrep "([0-9].?)*$" | head -n 1  )
             echo ">>> Downloading $VERSION"
-            VERSION="1.7.5"          
+            #VERSION="1.7.5"          
             wget -q https://github.com/ether/etherpad-lite/archive/$VERSION.tar.gz \
             -O /tmp/etherpad.tgz || return 1
 
@@ -136,7 +136,8 @@ config(){
       "groupAttributeIsDN": true,
       "searchScope": "sub",
       "groupSearch": "(&(cn='${LDAP_ADMIN_GROUP}')(objectClass=groupOfNames))",
-      "anonymousReadonly": false
+      "anonymousReadonly": false,
+      "password": ""
         }'
             [ -n "$USERS_SETTINGS" ] && USERS_SETTINGS=$USERS_SETTINGS",
 "
