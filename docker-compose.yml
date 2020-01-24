@@ -3,7 +3,7 @@ version: '3.1'
 services:
 
   etherpad:
-    image: dotriver/etherpad
+    image: etherpad
     environment:
         - TITLE=Welcome to Etherpad
         - DATABASE_HOST=mariadb
@@ -23,7 +23,7 @@ services:
     ports:
       - 9001:9001
     volumes:
-      - /tmp/etherpad:/var/www/etherpad/
+      - etherpad-data:/var/www/etherpad/
     networks:
       default:
     deploy:
@@ -71,5 +71,6 @@ services:
 volumes:
     mariadb-data:
     mariadb-config:
+    etherpad-data:
     openldap-data:
     openldap-config:

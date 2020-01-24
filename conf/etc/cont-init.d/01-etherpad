@@ -67,12 +67,17 @@ install(){
         if [ ! $CONFIGURED -eq 0 ]
         then
             echo ">>> Downloading etherpad"
-            wget -q https://github.com/ether/etherpad-lite/archive/master.tar.gz \
+            
+            VERSION=$(curl -s -L https://api.github.com/repos/ether/etherpad-lite/tags \
+            | grep "name" | cut -d '"' -f4 | egrep "([0-9].?)*$" | head -n 1  )
+            echo ">>> Downloading $VERSION"
+            VERSION="1.7.5"          
+            wget -q https://github.com/ether/etherpad-lite/archive/$VERSION.tar.gz \
             -O /tmp/etherpad.tgz || return 1
 
             echo ">>> Extracting "
             tar -xzf /tmp/etherpad.tgz -C /var/www/etherpad --strip-components=1
-            #mv /opt/ressources/settings.json.template /var/www/etherpad/settings.json.template
+            mv /opt/ressources/settings.json.template /var/www/etherpad/settings.json.template
 
             rm /tmp/etherpad.tgz
 
@@ -111,7 +116,7 @@ config(){
             ADMIN_SETTINGS='    "'${ADMIN_USERNAME}'": {
       "password": "'${ADMIN_PASSWORD}'",
       "is_admin": true
-        }'
+    }'
             [ -n "$USERS_SETTINGS" ] && USERS_SETTINGS=$USERS_SETTINGS",
 "
             USERS_SETTINGS=$USERS_SETTINGS$ADMIN_SETTINGS
