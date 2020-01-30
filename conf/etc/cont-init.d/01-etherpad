@@ -164,7 +164,7 @@ config(){
     fi
     if [ ! -z $LOGO ]
     then
-        sed -i "s/{LOGO}/$LOGO/g" /opt/ressources/index.js
+        sed -i "s;{LOGO};$LOGO;g" /opt/ressources/index.js
         cp /opt/ressources/index.js /var/www/etherpad/src/static/skins/colibris/
         cp /opt/ressources/index.css /var/www/etherpad/src/static/skins/colibris/
     fi
