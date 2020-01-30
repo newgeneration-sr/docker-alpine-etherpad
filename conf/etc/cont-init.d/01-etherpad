@@ -71,7 +71,6 @@ install(){
             VERSION=$(curl -s -L https://api.github.com/repos/ether/etherpad-lite/tags \
             | grep "name" | cut -d '"' -f4 | egrep "([0-9].?)*$" | head -n 1  )
             echo ">>> Downloading $VERSION"
-            #VERSION="1.7.5"          
             wget -q https://github.com/ether/etherpad-lite/archive/$VERSION.tar.gz \
             -O /tmp/etherpad.tgz || return 1
 
@@ -163,7 +162,12 @@ config(){
     else
         echo ">>> Already Configured"
     fi
-
+    if [ ! -z $LOGO ]
+    then
+        sed -i "s/{LOGO}/$LOGO/g" /opt/ressources/index.js
+        cp /opt/ressources/index.js /var/www/etherpad/src/static/skins/colibris/
+        cp /opt/ressources/index.css /var/www/etherpad/src/static/skins/colibris/
+    fi
     echo 0 > /tmp/etherpad_configured
 
     return 0

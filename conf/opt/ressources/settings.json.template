@@ -1,7 +1,7 @@
 {
   "title": "{{TITLE}}",
   "favicon": "favicon.ico",
-  "skinName": "no-skin",
+  "skinName": "colibris",
   "ip": "0.0.0.0",
   "port": 9001,
   "showSettingsInAdminPage": true,
