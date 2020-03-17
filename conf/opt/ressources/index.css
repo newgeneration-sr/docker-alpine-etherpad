@@ -56,6 +56,20 @@ body {
   display: block;
 }
 
+#small_list li {
+  list-style: none;
+  text-align: left;
+}
+#small_list li a {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  left: 305px;
+  color: #fff;
+  background: #333;
+  border: none;
+  top: 0;
+}
+
 
 button[type=submit] {
   border-top-right-radius: 3px;
