@@ -1,6 +1,6 @@
 ![docker build automated](https://img.shields.io/docker/cloud/automated/dotriver/etherpad)
 ![docker build status](https://img.shields.io/docker/cloud/build/dotriver/etherpad)
-![docker build status](https://img.shields.io/docker/cloud/pulls/dotriver/etherpad)
+![docker build status](https://img.shields.io/docker/pulls/dotriver/etherpad)
 
 # Etherpad on Alpine Linux + S6 Overlay
 
